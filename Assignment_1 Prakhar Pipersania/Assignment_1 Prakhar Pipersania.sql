@@ -6,7 +6,9 @@ USE guvi;
 
 
 /*
+
 Tables & Attributes in the database:
+
 users -> USER_ID, NAME, EMAIL, MOBILE_NUMBER
 codekata -> USER_ID, QUESTIONS_SOLVED, TOTAL_SUBMISSIONS, POINTS, TOPIC_ID
 attendance -> USER_ID, ATTENDANCE_DATE, IS_PRESENT (IS USER PRESENT OR ABSENT)
@@ -16,12 +18,17 @@ company_drives -> USER_ID, COMPANY_ID, COMPANY_NAME
 mentors -> MENTOR_ID, MENTOR_NAME
 students_activated_courses -> USER_ID, COURSE_ID
 courses -> COURSE_ID, COURSE_NAME, COURSE_INSTRUCTOR
+
 Assumptions:
+
 *) Each instructor can take any number of courses.
 *) A course can be taken by only one instructor.
-*) A student can enroll in any number of courses.
-*) A student can attend any number of company drives.
+*) A user can have any number of assigned tasks.
+*) A user can attend any number of company drives.
+*) A user can enroll in any number of courses.
 *) Each course can have any number of students.
+*) A topic can be studied by any number of users.
+
 */
 
 -- Q1) Create tables for the above list given
@@ -30,7 +37,14 @@ CREATE TABLE users (
 user_id INT,
 user_name VARCHAR(50),
 user_email VARCHAR(40),
-user_mob_no BIGINT
+user_mob_no BIGINT,
+CONSTRAINT PK_users PRIMARY KEY (user_id)
+);
+
+CREATE TABLE topics (
+topic_id INT,
+topic_name VARCHAR(50),
+CONSTRAINT PK_topics PRIMARY KEY (topic_id)
 );
 
 CREATE TABLE codekata (
@@ -38,18 +52,18 @@ user_id INT,
 questions_solved INT,
 total_submissions INT,
 points INT,
-topic_id INT
+topic_id INT,
+CONSTRAINT PK_ck PRIMARY KEY (user_id, topic_id),
+CONSTRAINT FK_ck1 FOREIGN KEY (user_id) REFERENCES users(user_id),
+CONSTRAINT FK_ck2 FOREIGN KEY (topic_id) REFERENCES topics(topic_id)
 );
 
 CREATE TABLE attendance (
 user_id INT,
 attendance_date DATE,
-is_present TINYINT
-);
-
-CREATE TABLE topics (
-topic_id INT,
-topic_name VARCHAR(50)
+is_present TINYINT,
+CONSTRAINT PK_attendance PRIMARY KEY (user_id, attendance_date),
+CONSTRAINT FK_attendance FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 			  
 CREATE TABLE tasks (
@@ -57,29 +71,39 @@ task_id INT,
 task_name VARCHAR(50),
 task_date DATE,
 user_id INT,
-is_completed TINYINT
+is_completed TINYINT,
+CONSTRAINT PK_tasks PRIMARY KEY (task_id),
+CONSTRAINT FK_tasks FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
 CREATE TABLE company_drives (
 user_id INT,
 company_id INT,
-company_name VARCHAR(50)
+company_name VARCHAR(50),
+CONSTRAINT PK_company_drives PRIMARY KEY (company_id,user_id),
+CONSTRAINT FK_company_drives FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 				  	  
 CREATE TABLE mentors (
 mentor_id INT,
-mentor_name VARCHAR(50)
+mentor_name VARCHAR(50),
+CONSTRAINT PK_mentors PRIMARY KEY (mentor_id)
+);
+
+CREATE TABLE courses (
+course_id INT,
+course_name VARCHAR(50),
+course_instructor INT,
+CONSTRAINT PK_courses PRIMARY KEY (course_id),
+CONSTRAINT FK_courses FOREIGN KEY (course_instructor) REFERENCES mentors(mentor_id)
 );
 
 CREATE TABLE students_activated_courses (
 user_id INT,
-course_id INT
-);
-				      
-CREATE TABLE courses (
 course_id INT,
-course_name VARCHAR(50),
-course_instructor INT
+CONSTRAINT PK_sac PRIMARY KEY (user_id, course_id),
+CONSTRAINT FK_sac1 FOREIGN KEY (user_id) REFERENCES users(user_id),
+CONSTRAINT FK_sac2 FOREIGN KEY (course_id) REFERENCES courses(course_id)
 );
 
 
@@ -91,6 +115,17 @@ INSERT INTO users VALUES (1,'Varun','varun.v@gmail.com',9876543210),
 			 (4,'Sfurti','sfurti.a@gmail.com',8928732654),
 			 (5,'Risabh','risabh.s@yahoo.com',9129830765);
 
+INSERT INTO topics VALUES (1,'Array'),
+			  (2,'Strings'), 
+			  (3,'Sorting'), 
+			  (4,'Bit Manipulation'), 
+			  (5,'Patterns'), 
+			  (6,'Trees and Graphs'), 
+			  (7,'Matrix'), 
+			  (8,'Linked List'), 
+			  (9,'Hashing'), 
+			  (10,'Dynamic Programming');
+			  
 INSERT INTO codekata VALUES (1,5,7,60,1),
 			    (2,2,3,20,3),
 			    (5,10,14,140,7),
@@ -112,17 +147,6 @@ INSERT INTO attendance VALUES (1,'2021-09-03',1),
 			      (4,'2021-09-06',1),
 			      (5,'2021-09-03',1),
 			      (5,'2021-09-06',1);
-
-INSERT INTO topics VALUES (1,'Array'),
-			  (2,'Strings'), 
-			  (3,'Sorting'), 
-			  (4,'Bit Manipulation'), 
-			  (5,'Patterns'), 
-			  (6,'Trees and Graphs'), 
-			  (7,'Matrix'), 
-			  (8,'Linked List'), 
-			  (9,'Hashing'), 
-			  (10,'Dynamic Programming');
 
 INSERT INTO tasks VALUES (1,'Javascript Assignment','2021-09-06',1,1),
 			 (2,'Programming Assignment','2021-09-03',3,1),
@@ -150,6 +174,15 @@ INSERT INTO mentors VALUES (1,'Mahesh'),
 			   (4,'Divya'),
 			   (5,'Vishal');
 
+INSERT INTO courses VALUES (1,'Programming Course',1),
+			   (2,'HTML Course',3),
+			   (3,'SQL Course',2),
+			   (4,'NoSQL Course',4),
+			   (5,'JavaScript Course',5),
+			   (6,'React Course',1),
+			   (7,'Angular Course',4),
+			   (8,'CSS Course',3);
+			   
 INSERT INTO students_activated_courses VALUES (1,1),
 					      (2,4),
 					      (1,3),
@@ -159,15 +192,6 @@ INSERT INTO students_activated_courses VALUES (1,1),
 					      (5,7),
 					      (3,5),
 					      (4,3);
-
-INSERT INTO courses VALUES (1,'Programming Course',1),
-			   (2,'HTML Course',3),
-			   (3,'SQL Course',2),
-			   (4,'NoSQL Course',4),
-			   (5,'JavaScript Course',5),
-			   (6,'React Course',1),
-			   (7,'Angular Course',4),
-			   (8,'CSS Course',3);
 			   
 -- Verifying Insertion 
 
@@ -205,6 +229,7 @@ ON u.user_id=c.user_id
 WHERE u.user_id=5;
 
 -- Display the no of company drives attended by all user
+
 SELECT u.user_id, u.user_name, 
 IFNULL(COUNT(c.company_id),0) AS company_drives_attended
 FROM users AS u
