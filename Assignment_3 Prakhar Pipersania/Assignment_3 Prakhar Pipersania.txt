@@ -1,4 +1,4 @@
-Outputs: https://github.com/PrakharPipersania/Guvi-Assignments/blob/main/Assignment_3%20Prakhar%20Pipersania/Assignment%20Output.png
+Outputs: https://github.com/PrakharPipersania/Guvi-Assignments/blob/main/Assignment_3%20Prakhar%20Pipersania/Assignment_3%20Output.png
 
 Q1) Find all the information about each products.
 
