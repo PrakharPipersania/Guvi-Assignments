@@ -1,0 +1,3053 @@
+Answers:
+
+Q 1) Find all the topics and tasks which are thought in the month of October.
+Ans 1)
+
+db.tasks.find({
+   "$expr":{
+      "$eq":[
+         {
+            "$month":{
+               $dateFromString:{
+                  dateString:'$task_date',
+                  format:"%d/%m/%Y"
+               }
+            }
+         },
+         10
+      ]
+   }
+});
+
+db.topics.find({
+   "$expr":{
+      "$eq":[
+         {
+            "$month":{
+               $dateFromString:{
+                  dateString:'$topic_date',
+                  format:"%d/%m/%Y"
+               }
+            }
+         },
+         10
+      ]
+   }
+});
+
+Q 2) Find all the company drives which appeared between 15 oct-2020 and 31-oct-2020.
+Ans 2)
+
+db.company_drives.find({
+   "$expr":{
+      "$and":[
+         {
+            '$gte':[
+               {
+                  $dateFromString:{
+                     dateString:'$drive_date',
+                     format:"%d/%m/%Y"
+                  }
+               },
+               ISODate("2020-10-15")
+            ]
+         },
+         {
+            '$lte':[
+               {
+                  $dateFromString:{
+                     dateString:'$drive_date',
+                     format:"%d/%m/%Y"
+                  }
+               },
+               ISODate("2020-10-31")
+            ]
+         }
+      ]
+   }
+});
+
+Q 3) Find all the company drives and students who are appeared for the placement.
+Ans 3)
+
+db.company_drives.aggregate([
+   {
+      $lookup:{
+         from:"users",
+         localField:"user_id",
+         foreignField:"user_id",
+         as:"student_name"
+      }
+   },
+   {
+      "$unwind":"$student_name"
+   },
+   {
+      "$set":{
+         "student_name":"$student_name.user_name"
+      }
+   }
+]);
+
+Q 4) Find the number of problems solved by the user in codekata.
+Ans 4)
+
+db.codekata.aggregate([
+   {
+      $lookup:{
+         from:"users",
+         localField:"user_id",
+         foreignField:"user_id",
+         as:"student_name"
+      }
+   },
+   {
+      "$unwind":"$student_name"
+   },
+   {
+      "$set":{
+         "student_name":"$student_name.user_name"
+      }
+   }
+]);
+
+Q 5) Find all the mentors with who has the mentee's count more than 15.
+Ans 5)
+
+db.mentors.aggregate([
+   {
+      $group:{
+         _id:"$mentor_name",
+         mentee:{
+            $sum:1
+         }
+      }
+   },
+   {
+      "$match":{
+         "mentee":{
+            '$gt':15
+         }
+      }
+   }
+]);
+
+Q 6) Find the number of users who are absent and task is not submitted  between 15 oct-2020 and 31-oct-2020.
+Ans 6)
+
+db.tasks.aggregate([
+   {
+      $lookup:{
+         from:"attendance",
+         localField:"user_id",
+         foreignField:"user_id",
+         as:"details"
+      }
+   },
+   {
+      "$unwind":"$details"
+   },
+   {
+      "$match":{
+         "$expr":{
+            "$and":[
+               {
+                  '$gte':[
+                     {
+                        $dateFromString:{
+                           dateString:'$task_date',
+                           format:"%d/%m/%Y"
+                        }
+                     },
+                     ISODate("2020-10-15")
+                  ]
+               },
+               {
+                  '$lte':[
+                     {
+                        $dateFromString:{
+                           dateString:'$task_date',
+                           format:"%d/%m/%Y"
+                        }
+                     },
+                     ISODate("2020-10-31")
+                  ]
+               },
+               {
+                  '$gte':[
+                     {
+                        $dateFromString:{
+                           dateString:'$details.attendance_date',
+                           format:"%d/%m/%Y"
+                        }
+                     },
+                     ISODate("2020-10-15")
+                  ]
+               },
+               {
+                  '$lte':[
+                     {
+                        $dateFromString:{
+                           dateString:'$details.attendance_date',
+                           format:"%d/%m/%Y"
+                        }
+                     },
+                     ISODate("2020-10-31")
+                  ]
+               },
+               {
+                  '$eq':[
+                     '$is_submitted',
+                     false
+                  ]
+               },
+               {
+                  '$eq':[
+                     '$details.is_present',
+                     false
+                  ]
+               }
+            ]
+         }
+      }
+   },
+   {
+      $group:{
+         _id:"$user_id",
+         count:{
+            $sum:1
+         }
+      }
+   }
+]);
+
+
+
+
+
+
+
+-> DB Creation
+
+use guvi;
+
+-> Data Insertion
+
+db.users.insertMany([
+	{
+		"user_id": 1,
+		"user_name": "Kristen",
+		"user_email": "habitant.morbi@cursusIntegermollis.edu"
+	},
+	{
+		"user_id": 2,
+		"user_name": "Carter",
+		"user_email": "quis.massa.Mauris@Etiamlaoreet.net"
+	},
+	{
+		"user_id": 3,
+		"user_name": "Quinlan",
+		"user_email": "in@lectus.net"
+	},
+	{
+		"user_id": 4,
+		"user_name": "Alexander",
+		"user_email": "Curabitur@Aenean.org"
+	},
+	{
+		"user_id": 5,
+		"user_name": "Denise",
+		"user_email": "Duis.volutpat.nunc@penatibuset.org"
+	},
+	{
+		"user_id": 6,
+		"user_name": "Ciaran",
+		"user_email": "tincidunt.tempus.risus@erateget.ca"
+	},
+	{
+		"user_id": 7,
+		"user_name": "Robin",
+		"user_email": "quis.massa@magnisdisparturient.com"
+	},
+	{
+		"user_id": 8,
+		"user_name": "Axel",
+		"user_email": "a@loremtristique.net"
+	},
+	{
+		"user_id": 9,
+		"user_name": "Thomas",
+		"user_email": "imperdiet.ornare@elitpharetraut.edu"
+	},
+	{
+		"user_id": 10,
+		"user_name": "Mikayla",
+		"user_email": "Quisque.ac.libero@quamafelis.net"
+	},
+	{
+		"user_id": 11,
+		"user_name": "Melinda",
+		"user_email": "Suspendisse@lectusquismassa.com"
+	},
+	{
+		"user_id": 12,
+		"user_name": "Joelle",
+		"user_email": "Maecenas.mi.felis@sollicitudin.edu"
+	},
+	{
+		"user_id": 13,
+		"user_name": "Macey",
+		"user_email": "sodales.at.velit@neque.com"
+	},
+	{
+		"user_id": 14,
+		"user_name": "Dale",
+		"user_email": "morbi.tristique@felisullamcorper.net"
+	},
+	{
+		"user_id": 15,
+		"user_name": "Marshall",
+		"user_email": "dolor@aliquetdiam.com"
+	},
+	{
+		"user_id": 16,
+		"user_name": "Cedric",
+		"user_email": "Aliquam.erat@nequetellus.ca"
+	},
+	{
+		"user_id": 17,
+		"user_name": "Wyatt",
+		"user_email": "id.sapien@semperrutrumFusce.org"
+	},
+	{
+		"user_id": 18,
+		"user_name": "Priscilla",
+		"user_email": "sit.amet@mi.edu"
+	},
+	{
+		"user_id": 19,
+		"user_name": "Amity",
+		"user_email": "Integer.sem@idnunc.com"
+	},
+	{
+		"user_id": 20,
+		"user_name": "Maggie",
+		"user_email": "ac.mi.eleifend@cursus.net"
+	},
+	{
+		"user_id": 21,
+		"user_name": "Arsenio",
+		"user_email": "erat@egetmollis.com"
+	},
+	{
+		"user_id": 22,
+		"user_name": "Harlan",
+		"user_email": "sed.sapien.Nunc@utpellentesque.com"
+	},
+	{
+		"user_id": 23,
+		"user_name": "Brian",
+		"user_email": "tellus@incursuset.com"
+	},
+	{
+		"user_id": 24,
+		"user_name": "Leilani",
+		"user_email": "Vestibulum.ante@et.org"
+	},
+	{
+		"user_id": 25,
+		"user_name": "Shellie",
+		"user_email": "pede.Praesent@Sed.co.uk"
+	},
+	{
+		"user_id": 26,
+		"user_name": "Kenneth",
+		"user_email": "blandit.mattis.Cras@nondapibus.org"
+	},
+	{
+		"user_id": 27,
+		"user_name": "Dolan",
+		"user_email": "adipiscing@Fuscedolor.edu"
+	},
+	{
+		"user_id": 28,
+		"user_name": "Kiayada",
+		"user_email": "lobortis@eget.co.uk"
+	},
+	{
+		"user_id": 29,
+		"user_name": "Kadeem",
+		"user_email": "nisl@tinciduntaliquamarcu.net"
+	},
+	{
+		"user_id": 30,
+		"user_name": "Reese",
+		"user_email": "eget.dictum@egestas.org"
+	},
+	{
+		"user_id": 31,
+		"user_name": "Lance",
+		"user_email": "pharetra.ut.pharetra@quamvelsapien.co.uk"
+	},
+	{
+		"user_id": 32,
+		"user_name": "Signe",
+		"user_email": "magna.Nam@mauris.co.uk"
+	},
+	{
+		"user_id": 33,
+		"user_name": "Cadman",
+		"user_email": "Phasellus@adipiscingelitAliquam.net"
+	},
+	{
+		"user_id": 34,
+		"user_name": "Amal",
+		"user_email": "sit@fermentummetus.co.uk"
+	},
+	{
+		"user_id": 35,
+		"user_name": "Castor",
+		"user_email": "Nam@ametmetus.com"
+	},
+	{
+		"user_id": 36,
+		"user_name": "Kimberly",
+		"user_email": "neque.In.ornare@in.net"
+	},
+	{
+		"user_id": 37,
+		"user_name": "Ross",
+		"user_email": "molestie.orci@aceleifendvitae.org"
+	},
+	{
+		"user_id": 38,
+		"user_name": "Claire",
+		"user_email": "blandit@a.org"
+	},
+	{
+		"user_id": 39,
+		"user_name": "Zeus",
+		"user_email": "arcu.Vestibulum@sollicitudin.edu"
+	},
+	{
+		"user_id": 40,
+		"user_name": "Davis",
+		"user_email": "ut.erat.Sed@sociisnatoquepenatibus.net"
+	},
+	{
+		"user_id": 41,
+		"user_name": "Quinn",
+		"user_email": "blandit.enim@venenatislacus.org"
+	},
+	{
+		"user_id": 42,
+		"user_name": "Ishmael",
+		"user_email": "cursus@rhoncusid.ca"
+	},
+	{
+		"user_id": 43,
+		"user_name": "Tatiana",
+		"user_email": "id@tinciduntorci.com"
+	},
+	{
+		"user_id": 44,
+		"user_name": "Garrison",
+		"user_email": "at.fringilla@dolorFuscefeugiat.edu"
+	},
+	{
+		"user_id": 45,
+		"user_name": "Mia",
+		"user_email": "eleifend@Cumsociisnatoque.edu"
+	},
+	{
+		"user_id": 46,
+		"user_name": "Gemma",
+		"user_email": "sem@ornarefacilisis.co.uk"
+	},
+	{
+		"user_id": 47,
+		"user_name": "Nathaniel",
+		"user_email": "ad.litora@vulputaterisusa.co.uk"
+	},
+	{
+		"user_id": 48,
+		"user_name": "Ryan",
+		"user_email": "nec.ante@enimgravida.ca"
+	},
+	{
+		"user_id": 49,
+		"user_name": "Kirsten",
+		"user_email": "quis@aliquetmetusurna.org"
+	},
+	{
+		"user_id": 50,
+		"user_name": "Beck",
+		"user_email": "Aliquam.nisl.Nulla@magnaCrasconvallis.com"
+	}]);
+
+db.codekata.insertMany([
+	{
+		"user_id": 1,
+		"problems_solved": 15,
+		"total_submissions": 64
+	},
+	{
+		"user_id": 2,
+		"problems_solved": 27,
+		"total_submissions": 62
+	},
+	{
+		"user_id": 3,
+		"problems_solved": 50,
+		"total_submissions": 57
+	},
+	{
+		"user_id": 4,
+		"problems_solved": 45,
+		"total_submissions": 52
+	},
+	{
+		"user_id": 5,
+		"problems_solved": 9,
+		"total_submissions": 99
+	},
+	{
+		"user_id": 6,
+		"problems_solved": 9,
+		"total_submissions": 34
+	},
+	{
+		"user_id": 7,
+		"problems_solved": 39,
+		"total_submissions": 58
+	},
+	{
+		"user_id": 8,
+		"problems_solved": 40,
+		"total_submissions": 70
+	},
+	{
+		"user_id": 9,
+		"problems_solved": 33,
+		"total_submissions": 44
+	},
+	{
+		"user_id": 10,
+		"problems_solved": 43,
+		"total_submissions": 83
+	},
+	{
+		"user_id": 11,
+		"problems_solved": 32,
+		"total_submissions": 62
+	},
+	{
+		"user_id": 12,
+		"problems_solved": 47,
+		"total_submissions": 67
+	},
+	{
+		"user_id": 13,
+		"problems_solved": 44,
+		"total_submissions": 81
+	},
+	{
+		"user_id": 14,
+		"problems_solved": 15,
+		"total_submissions": 33
+	},
+	{
+		"user_id": 15,
+		"problems_solved": 24,
+		"total_submissions": 54
+	},
+	{
+		"user_id": 16,
+		"problems_solved": 49,
+		"total_submissions": 85
+	},
+	{
+		"user_id": 17,
+		"problems_solved": 28,
+		"total_submissions": 67
+	},
+	{
+		"user_id": 18,
+		"problems_solved": 17,
+		"total_submissions": 42
+	},
+	{
+		"user_id": 19,
+		"problems_solved": 39,
+		"total_submissions": 75
+	},
+	{
+		"user_id": 20,
+		"problems_solved": 21,
+		"total_submissions": 34
+	},
+	{
+		"user_id": 21,
+		"problems_solved": 41,
+		"total_submissions": 99
+	},
+	{
+		"user_id": 22,
+		"problems_solved": 33,
+		"total_submissions": 47
+	},
+	{
+		"user_id": 23,
+		"problems_solved": 39,
+		"total_submissions": 43
+	},
+	{
+		"user_id": 24,
+		"problems_solved": 44,
+		"total_submissions": 51
+	},
+	{
+		"user_id": 25,
+		"problems_solved": 13,
+		"total_submissions": 74
+	},
+	{
+		"user_id": 26,
+		"problems_solved": 22,
+		"total_submissions": 99
+	},
+	{
+		"user_id": 27,
+		"problems_solved": 22,
+		"total_submissions": 48
+	},
+	{
+		"user_id": 28,
+		"problems_solved": 37,
+		"total_submissions": 42
+	},
+	{
+		"user_id": 29,
+		"problems_solved": 42,
+		"total_submissions": 67
+	},
+	{
+		"user_id": 30,
+		"problems_solved": 48,
+		"total_submissions": 71
+	},
+	{
+		"user_id": 31,
+		"problems_solved": 35,
+		"total_submissions": 43
+	},
+	{
+		"user_id": 32,
+		"problems_solved": 33,
+		"total_submissions": 43
+	},
+	{
+		"user_id": 33,
+		"problems_solved": 17,
+		"total_submissions": 27
+	},
+	{
+		"user_id": 34,
+		"problems_solved": 9,
+		"total_submissions": 15
+	},
+	{
+		"user_id": 35,
+		"problems_solved": 32,
+		"total_submissions": 46
+	},
+	{
+		"user_id": 36,
+		"problems_solved": 15,
+		"total_submissions": 95
+	},
+	{
+		"user_id": 37,
+		"problems_solved": 33,
+		"total_submissions": 90
+	},
+	{
+		"user_id": 38,
+		"problems_solved": 32,
+		"total_submissions": 56
+	},
+	{
+		"user_id": 39,
+		"problems_solved": 0,
+		"total_submissions": 5
+	},
+	{
+		"user_id": 40,
+		"problems_solved": 20,
+		"total_submissions": 36
+	},
+	{
+		"user_id": 41,
+		"problems_solved": 12,
+		"total_submissions": 74
+	},
+	{
+		"user_id": 42,
+		"problems_solved": 26,
+		"total_submissions": 55
+	},
+	{
+		"user_id": 43,
+		"problems_solved": 42,
+		"total_submissions": 46
+	},
+	{
+		"user_id": 44,
+		"problems_solved": 6,
+		"total_submissions": 58
+	},
+	{
+		"user_id": 45,
+		"problems_solved": 16,
+		"total_submissions": 23
+	},
+	{
+		"user_id": 46,
+		"problems_solved": 24,
+		"total_submissions": 53
+	},
+	{
+		"user_id": 47,
+		"problems_solved": 6,
+		"total_submissions": 9
+	},
+	{
+		"user_id": 48,
+		"problems_solved": 32,
+		"total_submissions": 70
+	},
+	{
+		"user_id": 49,
+		"problems_solved": 33,
+		"total_submissions": 39
+	},
+	{
+		"user_id": 50,
+		"problems_solved": 1,
+		"total_submissions": 4
+	}]);
+
+
+db.attendance.insertMany([
+	{
+		"user_id": 2,
+		"attendance_date": "28/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 48,
+		"attendance_date": "04/11/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 34,
+		"attendance_date": "01/11/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 4,
+		"attendance_date": "12/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 8,
+		"attendance_date": "18/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 50,
+		"attendance_date": "10/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 16,
+		"attendance_date": "07/11/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 20,
+		"attendance_date": "18/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 4,
+		"attendance_date": "24/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 35,
+		"attendance_date": "18/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 12,
+		"attendance_date": "16/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 42,
+		"attendance_date": "06/11/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 35,
+		"attendance_date": "19/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 5,
+		"attendance_date": "29/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 16,
+		"attendance_date": "01/11/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 39,
+		"attendance_date": "27/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 46,
+		"attendance_date": "05/11/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 17,
+		"attendance_date": "13/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 22,
+		"attendance_date": "08/11/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 46,
+		"attendance_date": "01/11/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 31,
+		"attendance_date": "21/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 36,
+		"attendance_date": "10/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 39,
+		"attendance_date": "14/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 23,
+		"attendance_date": "24/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 28,
+		"attendance_date": "28/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 22,
+		"attendance_date": "11/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 39,
+		"attendance_date": "25/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 49,
+		"attendance_date": "05/11/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 41,
+		"attendance_date": "05/11/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 15,
+		"attendance_date": "09/11/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 17,
+		"attendance_date": "23/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 13,
+		"attendance_date": "17/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 20,
+		"attendance_date": "30/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 37,
+		"attendance_date": "09/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 26,
+		"attendance_date": "05/11/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 36,
+		"attendance_date": "22/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 19,
+		"attendance_date": "12/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 33,
+		"attendance_date": "08/11/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 43,
+		"attendance_date": "05/11/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 44,
+		"attendance_date": "09/11/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 7,
+		"attendance_date": "27/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 28,
+		"attendance_date": "28/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 13,
+		"attendance_date": "04/11/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 42,
+		"attendance_date": "09/11/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 15,
+		"attendance_date": "06/11/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 5,
+		"attendance_date": "25/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 22,
+		"attendance_date": "08/11/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 43,
+		"attendance_date": "26/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 26,
+		"attendance_date": "25/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 8,
+		"attendance_date": "15/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 34,
+		"attendance_date": "08/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 44,
+		"attendance_date": "09/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 27,
+		"attendance_date": "13/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 13,
+		"attendance_date": "31/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 49,
+		"attendance_date": "08/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 21,
+		"attendance_date": "12/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 42,
+		"attendance_date": "30/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 8,
+		"attendance_date": "22/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 31,
+		"attendance_date": "07/11/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 13,
+		"attendance_date": "08/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 12,
+		"attendance_date": "30/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 9,
+		"attendance_date": "17/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 48,
+		"attendance_date": "09/11/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 39,
+		"attendance_date": "13/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 45,
+		"attendance_date": "15/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 6,
+		"attendance_date": "09/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 13,
+		"attendance_date": "16/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 10,
+		"attendance_date": "03/11/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 13,
+		"attendance_date": "15/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 11,
+		"attendance_date": "26/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 31,
+		"attendance_date": "23/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 20,
+		"attendance_date": "26/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 45,
+		"attendance_date": "06/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 23,
+		"attendance_date": "15/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 24,
+		"attendance_date": "22/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 21,
+		"attendance_date": "02/11/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 29,
+		"attendance_date": "08/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 35,
+		"attendance_date": "09/11/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 34,
+		"attendance_date": "08/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 44,
+		"attendance_date": "27/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 42,
+		"attendance_date": "29/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 2,
+		"attendance_date": "22/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 31,
+		"attendance_date": "08/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 11,
+		"attendance_date": "18/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 16,
+		"attendance_date": "11/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 9,
+		"attendance_date": "11/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 11,
+		"attendance_date": "17/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 15,
+		"attendance_date": "15/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 40,
+		"attendance_date": "22/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 36,
+		"attendance_date": "21/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 29,
+		"attendance_date": "01/11/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 13,
+		"attendance_date": "21/10/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 22,
+		"attendance_date": "22/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 8,
+		"attendance_date": "13/10/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 37,
+		"attendance_date": "01/11/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 21,
+		"attendance_date": "02/11/2020",
+		"is_present": true
+	},
+	{
+		"user_id": 17,
+		"attendance_date": "07/11/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 27,
+		"attendance_date": "04/11/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 28,
+		"attendance_date": "03/11/2020",
+		"is_present": false
+	},
+	{
+		"user_id": 7,
+		"attendance_date": "29/10/2020",
+		"is_present": true
+	}
+]);
+
+db.topics.insertMany([
+	{
+		"user_id": 8,
+		"topic_name": "Strings",
+		"topic_date": "24/10/2020"
+	},
+	{
+		"user_id": 25,
+		"topic_name": "Matrix",
+		"topic_date": "19/10/2020"
+	},
+	{
+		"user_id": 16,
+		"topic_name": "Matrix",
+		"topic_date": "19/10/2020"
+	},
+	{
+		"user_id": 20,
+		"topic_name": "Dynamic Programming",
+		"topic_date": "21/10/2020"
+	},
+	{
+		"user_id": 14,
+		"topic_name": "Hashing",
+		"topic_date": "11/10/2020"
+	},
+	{
+		"user_id": 45,
+		"topic_name": "Bit Manipulation",
+		"topic_date": "17/10/2020"
+	},
+	{
+		"user_id": 25,
+		"topic_name": "Strings",
+		"topic_date": "07/10/2020"
+	},
+	{
+		"user_id": 11,
+		"topic_name": "Sorting",
+		"topic_date": "01/11/2020"
+	},
+	{
+		"user_id": 28,
+		"topic_name": "Strings",
+		"topic_date": "06/10/2020"
+	},
+	{
+		"user_id": 22,
+		"topic_name": "Sorting",
+		"topic_date": "26/10/2020"
+	},
+	{
+		"user_id": 21,
+		"topic_name": "Dynamic Programming",
+		"topic_date": "08/11/2020"
+	},
+	{
+		"user_id": 4,
+		"topic_name": "Matrix",
+		"topic_date": "07/11/2020"
+	},
+	{
+		"user_id": 1,
+		"topic_name": "Sorting",
+		"topic_date": "02/11/2020"
+	},
+	{
+		"user_id": 44,
+		"topic_name": "Patterns",
+		"topic_date": "17/10/2020"
+	},
+	{
+		"user_id": 25,
+		"topic_name": "Sorting",
+		"topic_date": "17/10/2020"
+	},
+	{
+		"user_id": 1,
+		"topic_name": "Dynamic Programming",
+		"topic_date": "26/10/2020"
+	},
+	{
+		"user_id": 16,
+		"topic_name": "Trees and Graphs",
+		"topic_date": "14/10/2020"
+	},
+	{
+		"user_id": 28,
+		"topic_name": "Matrix",
+		"topic_date": "05/11/2020"
+	},
+	{
+		"user_id": 31,
+		"topic_name": "Dynamic Programming",
+		"topic_date": "21/10/2020"
+	},
+	{
+		"user_id": 1,
+		"topic_name": "Hashing",
+		"topic_date": "04/11/2020"
+	},
+	{
+		"user_id": 27,
+		"topic_name": "Hashing",
+		"topic_date": "11/10/2020"
+	},
+	{
+		"user_id": 34,
+		"topic_name": "Strings",
+		"topic_date": "07/10/2020"
+	},
+	{
+		"user_id": 30,
+		"topic_name": "Patterns",
+		"topic_date": "08/11/2020"
+	},
+	{
+		"user_id": 37,
+		"topic_name": "Patterns",
+		"topic_date": "24/10/2020"
+	},
+	{
+		"user_id": 18,
+		"topic_name": "Strings",
+		"topic_date": "13/10/2020"
+	},
+	{
+		"user_id": 10,
+		"topic_name": "Bit Manipulation",
+		"topic_date": "19/10/2020"
+	},
+	{
+		"user_id": 1,
+		"topic_name": "Strings",
+		"topic_date": "26/10/2020"
+	},
+	{
+		"user_id": 1,
+		"topic_name": "Bit Manipulation",
+		"topic_date": "19/10/2020"
+	},
+	{
+		"user_id": 32,
+		"topic_name": "Matrix",
+		"topic_date": "31/10/2020"
+	},
+	{
+		"user_id": 48,
+		"topic_name": "Trees and Graphs",
+		"topic_date": "01/11/2020"
+	},
+	{
+		"user_id": 2,
+		"topic_name": "Bit Manipulation",
+		"topic_date": "13/10/2020"
+	},
+	{
+		"user_id": 24,
+		"topic_name": "Patterns",
+		"topic_date": "31/10/2020"
+	},
+	{
+		"user_id": 12,
+		"topic_name": "Hashing",
+		"topic_date": "26/10/2020"
+	},
+	{
+		"user_id": 37,
+		"topic_name": "Patterns",
+		"topic_date": "18/10/2020"
+	},
+	{
+		"user_id": 40,
+		"topic_name": "Dynamic Programming",
+		"topic_date": "23/10/2020"
+	},
+	{
+		"user_id": 8,
+		"topic_name": "Hashing",
+		"topic_date": "15/10/2020"
+	},
+	{
+		"user_id": 13,
+		"topic_name": "Dynamic Programming",
+		"topic_date": "01/11/2020"
+	},
+	{
+		"user_id": 21,
+		"topic_name": "Matrix",
+		"topic_date": "27/10/2020"
+	},
+	{
+		"user_id": 28,
+		"topic_name": "Bit Manipulation",
+		"topic_date": "08/10/2020"
+	},
+	{
+		"user_id": 30,
+		"topic_name": "Bit Manipulation",
+		"topic_date": "07/11/2020"
+	},
+	{
+		"user_id": 16,
+		"topic_name": "Hashing",
+		"topic_date": "01/11/2020"
+	},
+	{
+		"user_id": 24,
+		"topic_name": "Bit Manipulation",
+		"topic_date": "18/10/2020"
+	},
+	{
+		"user_id": 41,
+		"topic_name": "Strings",
+		"topic_date": "28/10/2020"
+	},
+	{
+		"user_id": 10,
+		"topic_name": "Dynamic Programming",
+		"topic_date": "25/10/2020"
+	},
+	{
+		"user_id": 46,
+		"topic_name": "Sorting",
+		"topic_date": "21/10/2020"
+	},
+	{
+		"user_id": 21,
+		"topic_name": "Strings",
+		"topic_date": "26/10/2020"
+	},
+	{
+		"user_id": 36,
+		"topic_name": "Strings",
+		"topic_date": "06/10/2020"
+	},
+	{
+		"user_id": 29,
+		"topic_name": "Patterns",
+		"topic_date": "31/10/2020"
+	},
+	{
+		"user_id": 47,
+		"topic_name": "Strings",
+		"topic_date": "08/11/2020"
+	},
+	{
+		"user_id": 27,
+		"topic_name": "Trees and Graphs",
+		"topic_date": "02/11/2020"
+	},
+	{
+		"user_id": 41,
+		"topic_name": "Hashing",
+		"topic_date": "13/10/2020"
+	},
+	{
+		"user_id": 17,
+		"topic_name": "Bit Manipulation",
+		"topic_date": "04/11/2020"
+	},
+	{
+		"user_id": 2,
+		"topic_name": "Matrix",
+		"topic_date": "17/10/2020"
+	},
+	{
+		"user_id": 24,
+		"topic_name": "Hashing",
+		"topic_date": "08/11/2020"
+	},
+	{
+		"user_id": 42,
+		"topic_name": "Dynamic Programming",
+		"topic_date": "06/10/2020"
+	},
+	{
+		"user_id": 42,
+		"topic_name": "Bit Manipulation",
+		"topic_date": "20/10/2020"
+	},
+	{
+		"user_id": 47,
+		"topic_name": "Trees and Graphs",
+		"topic_date": "22/10/2020"
+	},
+	{
+		"user_id": 7,
+		"topic_name": "Linked List",
+		"topic_date": "09/10/2020"
+	},
+	{
+		"user_id": 17,
+		"topic_name": "Trees and Graphs",
+		"topic_date": "08/11/2020"
+	},
+	{
+		"user_id": 19,
+		"topic_name": "Trees and Graphs",
+		"topic_date": "28/10/2020"
+	},
+	{
+		"user_id": 32,
+		"topic_name": "Sorting",
+		"topic_date": "06/11/2020"
+	},
+	{
+		"user_id": 28,
+		"topic_name": "Dynamic Programming",
+		"topic_date": "02/11/2020"
+	},
+	{
+		"user_id": 48,
+		"topic_name": "Sorting",
+		"topic_date": "26/10/2020"
+	},
+	{
+		"user_id": 28,
+		"topic_name": "Matrix",
+		"topic_date": "25/10/2020"
+	},
+	{
+		"user_id": 26,
+		"topic_name": "Bit Manipulation",
+		"topic_date": "23/10/2020"
+	},
+	{
+		"user_id": 19,
+		"topic_name": "Linked List",
+		"topic_date": "04/11/2020"
+	},
+	{
+		"user_id": 1,
+		"topic_name": "Bit Manipulation",
+		"topic_date": "11/10/2020"
+	},
+	{
+		"user_id": 14,
+		"topic_name": "Strings",
+		"topic_date": "26/10/2020"
+	},
+	{
+		"user_id": 30,
+		"topic_name": "Dynamic Programming",
+		"topic_date": "08/11/2020"
+	},
+	{
+		"user_id": 3,
+		"topic_name": "Patterns",
+		"topic_date": "19/10/2020"
+	},
+	{
+		"user_id": 5,
+		"topic_name": "Hashing",
+		"topic_date": "23/10/2020"
+	},
+	{
+		"user_id": 34,
+		"topic_name": "Linked List",
+		"topic_date": "25/10/2020"
+	},
+	{
+		"user_id": 28,
+		"topic_name": "Linked List",
+		"topic_date": "08/11/2020"
+	},
+	{
+		"user_id": 43,
+		"topic_name": "Trees and Graphs",
+		"topic_date": "10/10/2020"
+	},
+	{
+		"user_id": 38,
+		"topic_name": "Strings",
+		"topic_date": "18/10/2020"
+	},
+	{
+		"user_id": 23,
+		"topic_name": "Trees and Graphs",
+		"topic_date": "25/10/2020"
+	},
+	{
+		"user_id": 21,
+		"topic_name": "Hashing",
+		"topic_date": "02/11/2020"
+	},
+	{
+		"user_id": 34,
+		"topic_name": "Matrix",
+		"topic_date": "18/10/2020"
+	},
+	{
+		"user_id": 25,
+		"topic_name": "Patterns",
+		"topic_date": "26/10/2020"
+	},
+	{
+		"user_id": 30,
+		"topic_name": "Trees and Graphs",
+		"topic_date": "16/10/2020"
+	},
+	{
+		"user_id": 38,
+		"topic_name": "Sorting",
+		"topic_date": "05/11/2020"
+	},
+	{
+		"user_id": 30,
+		"topic_name": "Patterns",
+		"topic_date": "03/11/2020"
+	},
+	{
+		"user_id": 21,
+		"topic_name": "Hashing",
+		"topic_date": "17/10/2020"
+	},
+	{
+		"user_id": 5,
+		"topic_name": "Bit Manipulation",
+		"topic_date": "10/10/2020"
+	},
+	{
+		"user_id": 38,
+		"topic_name": "Linked List",
+		"topic_date": "11/10/2020"
+	},
+	{
+		"user_id": 10,
+		"topic_name": "Linked List",
+		"topic_date": "14/10/2020"
+	},
+	{
+		"user_id": 3,
+		"topic_name": "Sorting",
+		"topic_date": "19/10/2020"
+	},
+	{
+		"user_id": 6,
+		"topic_name": "Sorting",
+		"topic_date": "07/10/2020"
+	},
+	{
+		"user_id": 39,
+		"topic_name": "Trees and Graphs",
+		"topic_date": "02/11/2020"
+	},
+	{
+		"user_id": 38,
+		"topic_name": "Matrix",
+		"topic_date": "13/10/2020"
+	},
+	{
+		"user_id": 11,
+		"topic_name": "Sorting",
+		"topic_date": "07/11/2020"
+	},
+	{
+		"user_id": 25,
+		"topic_name": "Hashing",
+		"topic_date": "11/10/2020"
+	},
+	{
+		"user_id": 15,
+		"topic_name": "Dynamic Programming",
+		"topic_date": "11/10/2020"
+	},
+	{
+		"user_id": 22,
+		"topic_name": "Trees and Graphs",
+		"topic_date": "30/10/2020"
+	},
+	{
+		"user_id": 41,
+		"topic_name": "Strings",
+		"topic_date": "23/10/2020"
+	},
+	{
+		"user_id": 43,
+		"topic_name": "Patterns",
+		"topic_date": "31/10/2020"
+	},
+	{
+		"user_id": 13,
+		"topic_name": "Hashing",
+		"topic_date": "22/10/2020"
+	},
+	{
+		"user_id": 44,
+		"topic_name": "Sorting",
+		"topic_date": "08/11/2020"
+	},
+	{
+		"user_id": 12,
+		"topic_name": "Strings",
+		"topic_date": "08/10/2020"
+	},
+	{
+		"user_id": 22,
+		"topic_name": "Matrix",
+		"topic_date": "02/11/2020"
+	}
+]);
+
+db.tasks.insertMany([
+	{
+		"user_id": 49,
+		"task_name": "Programming Assignment",
+		"task_date": "28/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 41,
+		"task_name": "SQL Assignment",
+		"task_date": "06/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 20,
+		"task_name": "HTML Assignment",
+		"task_date": "01/11/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 18,
+		"task_name": "SQL Assignment",
+		"task_date": "15/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 2,
+		"task_name": "Javascript Assignment",
+		"task_date": "03/11/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 26,
+		"task_name": "SQL Assignment",
+		"task_date": "20/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 25,
+		"task_name": "Programming Assignment",
+		"task_date": "16/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 28,
+		"task_name": "SQL Assignment",
+		"task_date": "11/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 48,
+		"task_name": "SQL Assignment",
+		"task_date": "04/11/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 21,
+		"task_name": "Programming Assignment",
+		"task_date": "28/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 29,
+		"task_name": "HTML Assignment",
+		"task_date": "06/11/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 27,
+		"task_name": "Javascript Assignment",
+		"task_date": "25/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 6,
+		"task_name": "NoSQL Assignment",
+		"task_date": "30/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 27,
+		"task_name": "Javascript Assignment",
+		"task_date": "31/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 24,
+		"task_name": "Programming Assignment",
+		"task_date": "07/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 48,
+		"task_name": "NoSQL Assignment",
+		"task_date": "07/11/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 29,
+		"task_name": "HTML Assignment",
+		"task_date": "07/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 50,
+		"task_name": "Javascript Assignment",
+		"task_date": "16/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 40,
+		"task_name": "Javascript Assignment",
+		"task_date": "19/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 6,
+		"task_name": "NoSQL Assignment",
+		"task_date": "02/11/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 44,
+		"task_name": "Javascript Assignment",
+		"task_date": "14/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 41,
+		"task_name": "Programming Assignment",
+		"task_date": "31/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 2,
+		"task_name": "Programming Assignment",
+		"task_date": "08/11/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 7,
+		"task_name": "HTML Assignment",
+		"task_date": "01/11/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 3,
+		"task_name": "Javascript Assignment",
+		"task_date": "14/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 25,
+		"task_name": "Javascript Assignment",
+		"task_date": "08/11/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 43,
+		"task_name": "HTML Assignment",
+		"task_date": "25/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 47,
+		"task_name": "HTML Assignment",
+		"task_date": "24/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 10,
+		"task_name": "SQL Assignment",
+		"task_date": "09/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 17,
+		"task_name": "Programming Assignment",
+		"task_date": "08/11/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 37,
+		"task_name": "Programming Assignment",
+		"task_date": "24/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 4,
+		"task_name": "Programming Assignment",
+		"task_date": "07/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 49,
+		"task_name": "HTML Assignment",
+		"task_date": "24/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 23,
+		"task_name": "Javascript Assignment",
+		"task_date": "12/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 40,
+		"task_name": "Programming Assignment",
+		"task_date": "09/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 50,
+		"task_name": "Javascript Assignment",
+		"task_date": "27/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 7,
+		"task_name": "NoSQL Assignment",
+		"task_date": "09/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 31,
+		"task_name": "Programming Assignment",
+		"task_date": "23/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 28,
+		"task_name": "SQL Assignment",
+		"task_date": "03/11/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 25,
+		"task_name": "Javascript Assignment",
+		"task_date": "09/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 41,
+		"task_name": "HTML Assignment",
+		"task_date": "30/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 33,
+		"task_name": "Programming Assignment",
+		"task_date": "04/11/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 3,
+		"task_name": "NoSQL Assignment",
+		"task_date": "26/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 47,
+		"task_name": "Programming Assignment",
+		"task_date": "02/11/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 36,
+		"task_name": "Programming Assignment",
+		"task_date": "04/11/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 40,
+		"task_name": "Programming Assignment",
+		"task_date": "01/11/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 11,
+		"task_name": "Programming Assignment",
+		"task_date": "16/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 1,
+		"task_name": "SQL Assignment",
+		"task_date": "03/11/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 11,
+		"task_name": "SQL Assignment",
+		"task_date": "30/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 48,
+		"task_name": "Javascript Assignment",
+		"task_date": "24/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 21,
+		"task_name": "HTML Assignment",
+		"task_date": "29/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 17,
+		"task_name": "Javascript Assignment",
+		"task_date": "24/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 41,
+		"task_name": "Javascript Assignment",
+		"task_date": "01/11/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 17,
+		"task_name": "HTML Assignment",
+		"task_date": "27/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 47,
+		"task_name": "Javascript Assignment",
+		"task_date": "12/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 14,
+		"task_name": "Programming Assignment",
+		"task_date": "07/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 45,
+		"task_name": "Programming Assignment",
+		"task_date": "16/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 37,
+		"task_name": "NoSQL Assignment",
+		"task_date": "13/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 32,
+		"task_name": "NoSQL Assignment",
+		"task_date": "06/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 31,
+		"task_name": "SQL Assignment",
+		"task_date": "10/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 26,
+		"task_name": "SQL Assignment",
+		"task_date": "04/11/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 39,
+		"task_name": "Javascript Assignment",
+		"task_date": "03/11/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 20,
+		"task_name": "SQL Assignment",
+		"task_date": "05/11/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 26,
+		"task_name": "SQL Assignment",
+		"task_date": "06/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 38,
+		"task_name": "Javascript Assignment",
+		"task_date": "04/11/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 14,
+		"task_name": "Javascript Assignment",
+		"task_date": "01/11/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 15,
+		"task_name": "Javascript Assignment",
+		"task_date": "28/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 38,
+		"task_name": "Programming Assignment",
+		"task_date": "20/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 16,
+		"task_name": "Javascript Assignment",
+		"task_date": "10/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 12,
+		"task_name": "HTML Assignment",
+		"task_date": "31/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 35,
+		"task_name": "Programming Assignment",
+		"task_date": "29/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 49,
+		"task_name": "Javascript Assignment",
+		"task_date": "06/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 25,
+		"task_name": "SQL Assignment",
+		"task_date": "20/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 13,
+		"task_name": "NoSQL Assignment",
+		"task_date": "10/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 24,
+		"task_name": "Programming Assignment",
+		"task_date": "01/11/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 42,
+		"task_name": "Javascript Assignment",
+		"task_date": "12/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 49,
+		"task_name": "Programming Assignment",
+		"task_date": "15/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 26,
+		"task_name": "HTML Assignment",
+		"task_date": "26/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 9,
+		"task_name": "Programming Assignment",
+		"task_date": "01/11/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 11,
+		"task_name": "Programming Assignment",
+		"task_date": "13/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 31,
+		"task_name": "Javascript Assignment",
+		"task_date": "07/11/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 16,
+		"task_name": "SQL Assignment",
+		"task_date": "18/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 3,
+		"task_name": "SQL Assignment",
+		"task_date": "18/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 9,
+		"task_name": "Javascript Assignment",
+		"task_date": "07/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 34,
+		"task_name": "SQL Assignment",
+		"task_date": "27/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 22,
+		"task_name": "HTML Assignment",
+		"task_date": "16/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 35,
+		"task_name": "Programming Assignment",
+		"task_date": "29/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 40,
+		"task_name": "Javascript Assignment",
+		"task_date": "07/11/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 1,
+		"task_name": "SQL Assignment",
+		"task_date": "07/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 40,
+		"task_name": "HTML Assignment",
+		"task_date": "18/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 15,
+		"task_name": "Javascript Assignment",
+		"task_date": "17/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 12,
+		"task_name": "Javascript Assignment",
+		"task_date": "05/11/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 35,
+		"task_name": "Programming Assignment",
+		"task_date": "09/11/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 34,
+		"task_name": "HTML Assignment",
+		"task_date": "07/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 22,
+		"task_name": "Programming Assignment",
+		"task_date": "24/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 4,
+		"task_name": "Javascript Assignment",
+		"task_date": "01/11/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 7,
+		"task_name": "Programming Assignment",
+		"task_date": "16/10/2020",
+		"is_submitted": false
+	},
+	{
+		"user_id": 25,
+		"task_name": "Programming Assignment",
+		"task_date": "11/10/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 12,
+		"task_name": "Javascript Assignment",
+		"task_date": "04/11/2020",
+		"is_submitted": true
+	},
+	{
+		"user_id": 2,
+		"task_name": "HTML Assignment",
+		"task_date": "29/10/2020",
+		"is_submitted": true
+	}
+]);
+
+db.company_drives.insertMany([
+	{
+		"user_id": 8,
+		"company_name": "Apple",
+		"drive_date": "10/10/2020"
+	},
+	{
+		"user_id": 5,
+		"company_name": "TCS",
+		"drive_date": "25/10/2020"
+	},
+	{
+		"user_id": 24,
+		"company_name": "Chubb",
+		"drive_date": "03/11/2020"
+	},
+	{
+		"user_id": 18,
+		"company_name": "Netflix",
+		"drive_date": "17/10/2020"
+	},
+	{
+		"user_id": 19,
+		"company_name": "Microsoft",
+		"drive_date": "10/10/2020"
+	},
+	{
+		"user_id": 31,
+		"company_name": "Infosys",
+		"drive_date": "03/11/2020"
+	},
+	{
+		"user_id": 22,
+		"company_name": "Microsoft",
+		"drive_date": "09/10/2020"
+	},
+	{
+		"user_id": 25,
+		"company_name": "TCS",
+		"drive_date": "04/11/2020"
+	},
+	{
+		"user_id": 3,
+		"company_name": "Netflix",
+		"drive_date": "02/11/2020"
+	},
+	{
+		"user_id": 11,
+		"company_name": "Amazon",
+		"drive_date": "26/10/2020"
+	},
+	{
+		"user_id": 15,
+		"company_name": "Facebook",
+		"drive_date": "08/11/2020"
+	},
+	{
+		"user_id": 47,
+		"company_name": "Netflix",
+		"drive_date": "11/10/2020"
+	},
+	{
+		"user_id": 34,
+		"company_name": "TCS",
+		"drive_date": "11/10/2020"
+	},
+	{
+		"user_id": 14,
+		"company_name": "Infosys",
+		"drive_date": "09/11/2020"
+	},
+	{
+		"user_id": 16,
+		"company_name": "Leetcode",
+		"drive_date": "06/10/2020"
+	},
+	{
+		"user_id": 24,
+		"company_name": "Facebook",
+		"drive_date": "20/10/2020"
+	},
+	{
+		"user_id": 9,
+		"company_name": "TCS",
+		"drive_date": "23/10/2020"
+	},
+	{
+		"user_id": 18,
+		"company_name": "Apple",
+		"drive_date": "01/11/2020"
+	},
+	{
+		"user_id": 25,
+		"company_name": "Amazon",
+		"drive_date": "06/10/2020"
+	},
+	{
+		"user_id": 23,
+		"company_name": "Microsoft",
+		"drive_date": "14/10/2020"
+	},
+	{
+		"user_id": 8,
+		"company_name": "Amazon",
+		"drive_date": "23/10/2020"
+	},
+	{
+		"user_id": 32,
+		"company_name": "Netflix",
+		"drive_date": "19/10/2020"
+	},
+	{
+		"user_id": 27,
+		"company_name": "Unity",
+		"drive_date": "23/10/2020"
+	},
+	{
+		"user_id": 34,
+		"company_name": "Unity",
+		"drive_date": "01/11/2020"
+	},
+	{
+		"user_id": 27,
+		"company_name": "Facebook",
+		"drive_date": "16/10/2020"
+	},
+	{
+		"user_id": 33,
+		"company_name": "Apple",
+		"drive_date": "15/10/2020"
+	},
+	{
+		"user_id": 23,
+		"company_name": "Apple",
+		"drive_date": "08/10/2020"
+	},
+	{
+		"user_id": 6,
+		"company_name": "Microsoft",
+		"drive_date": "31/10/2020"
+	},
+	{
+		"user_id": 2,
+		"company_name": "Infosys",
+		"drive_date": "14/10/2020"
+	},
+	{
+		"user_id": 34,
+		"company_name": "Infosys",
+		"drive_date": "12/10/2020"
+	},
+	{
+		"user_id": 1,
+		"company_name": "TCS",
+		"drive_date": "09/11/2020"
+	},
+	{
+		"user_id": 46,
+		"company_name": "Chubb",
+		"drive_date": "31/10/2020"
+	},
+	{
+		"user_id": 40,
+		"company_name": "Amazon",
+		"drive_date": "08/10/2020"
+	},
+	{
+		"user_id": 33,
+		"company_name": "Infosys",
+		"drive_date": "09/10/2020"
+	},
+	{
+		"user_id": 30,
+		"company_name": "Infosys",
+		"drive_date": "10/10/2020"
+	},
+	{
+		"user_id": 17,
+		"company_name": "Infosys",
+		"drive_date": "06/11/2020"
+	},
+	{
+		"user_id": 46,
+		"company_name": "Apple",
+		"drive_date": "20/10/2020"
+	},
+	{
+		"user_id": 41,
+		"company_name": "Leetcode",
+		"drive_date": "30/10/2020"
+	},
+	{
+		"user_id": 29,
+		"company_name": "Unity",
+		"drive_date": "03/11/2020"
+	},
+	{
+		"user_id": 22,
+		"company_name": "Microsoft",
+		"drive_date": "05/11/2020"
+	},
+	{
+		"user_id": 1,
+		"company_name": "Unity",
+		"drive_date": "16/10/2020"
+	},
+	{
+		"user_id": 19,
+		"company_name": "Infosys",
+		"drive_date": "12/10/2020"
+	},
+	{
+		"user_id": 33,
+		"company_name": "Apple",
+		"drive_date": "17/10/2020"
+	},
+	{
+		"user_id": 9,
+		"company_name": "Microsoft",
+		"drive_date": "07/10/2020"
+	},
+	{
+		"user_id": 45,
+		"company_name": "Facebook",
+		"drive_date": "13/10/2020"
+	},
+	{
+		"user_id": 34,
+		"company_name": "Microsoft",
+		"drive_date": "21/10/2020"
+	},
+	{
+		"user_id": 13,
+		"company_name": "Netflix",
+		"drive_date": "13/10/2020"
+	},
+	{
+		"user_id": 39,
+		"company_name": "Microsoft",
+		"drive_date": "05/11/2020"
+	},
+	{
+		"user_id": 39,
+		"company_name": "Infosys",
+		"drive_date": "06/11/2020"
+	},
+	{
+		"user_id": 7,
+		"company_name": "Netflix",
+		"drive_date": "09/10/2020"
+	},
+	{
+		"user_id": 8,
+		"company_name": "Chubb",
+		"drive_date": "05/11/2020"
+	},
+	{
+		"user_id": 30,
+		"company_name": "Facebook",
+		"drive_date": "18/10/2020"
+	},
+	{
+		"user_id": 50,
+		"company_name": "Leetcode",
+		"drive_date": "18/10/2020"
+	},
+	{
+		"user_id": 5,
+		"company_name": "Unity",
+		"drive_date": "30/10/2020"
+	},
+	{
+		"user_id": 35,
+		"company_name": "Leetcode",
+		"drive_date": "21/10/2020"
+	},
+	{
+		"user_id": 22,
+		"company_name": "Unity",
+		"drive_date": "24/10/2020"
+	},
+	{
+		"user_id": 7,
+		"company_name": "TCS",
+		"drive_date": "09/10/2020"
+	},
+	{
+		"user_id": 11,
+		"company_name": "TCS",
+		"drive_date": "01/11/2020"
+	},
+	{
+		"user_id": 44,
+		"company_name": "Apple",
+		"drive_date": "16/10/2020"
+	},
+	{
+		"user_id": 32,
+		"company_name": "Microsoft",
+		"drive_date": "20/10/2020"
+	},
+	{
+		"user_id": 12,
+		"company_name": "Leetcode",
+		"drive_date": "10/10/2020"
+	},
+	{
+		"user_id": 44,
+		"company_name": "Amazon",
+		"drive_date": "26/10/2020"
+	},
+	{
+		"user_id": 43,
+		"company_name": "Chubb",
+		"drive_date": "06/11/2020"
+	},
+	{
+		"user_id": 17,
+		"company_name": "Facebook",
+		"drive_date": "06/11/2020"
+	},
+	{
+		"user_id": 36,
+		"company_name": "TCS",
+		"drive_date": "07/10/2020"
+	},
+	{
+		"user_id": 22,
+		"company_name": "Facebook",
+		"drive_date": "15/10/2020"
+	},
+	{
+		"user_id": 22,
+		"company_name": "TCS",
+		"drive_date": "12/10/2020"
+	},
+	{
+		"user_id": 31,
+		"company_name": "Amazon",
+		"drive_date": "13/10/2020"
+	},
+	{
+		"user_id": 3,
+		"company_name": "Microsoft",
+		"drive_date": "28/10/2020"
+	},
+	{
+		"user_id": 24,
+		"company_name": "Facebook",
+		"drive_date": "29/10/2020"
+	},
+	{
+		"user_id": 42,
+		"company_name": "Apple",
+		"drive_date": "18/10/2020"
+	},
+	{
+		"user_id": 16,
+		"company_name": "Unity",
+		"drive_date": "13/10/2020"
+	},
+	{
+		"user_id": 48,
+		"company_name": "Chubb",
+		"drive_date": "02/11/2020"
+	},
+	{
+		"user_id": 6,
+		"company_name": "Unity",
+		"drive_date": "04/11/2020"
+	},
+	{
+		"user_id": 16,
+		"company_name": "Leetcode",
+		"drive_date": "11/10/2020"
+	},
+	{
+		"user_id": 50,
+		"company_name": "Facebook",
+		"drive_date": "31/10/2020"
+	},
+	{
+		"user_id": 8,
+		"company_name": "Apple",
+		"drive_date": "18/10/2020"
+	},
+	{
+		"user_id": 24,
+		"company_name": "Microsoft",
+		"drive_date": "08/11/2020"
+	},
+	{
+		"user_id": 31,
+		"company_name": "Chubb",
+		"drive_date": "19/10/2020"
+	},
+	{
+		"user_id": 8,
+		"company_name": "TCS",
+		"drive_date": "07/10/2020"
+	},
+	{
+		"user_id": 31,
+		"company_name": "Chubb",
+		"drive_date": "17/10/2020"
+	},
+	{
+		"user_id": 23,
+		"company_name": "Microsoft",
+		"drive_date": "02/11/2020"
+	},
+	{
+		"user_id": 7,
+		"company_name": "Infosys",
+		"drive_date": "09/10/2020"
+	},
+	{
+		"user_id": 40,
+		"company_name": "Microsoft",
+		"drive_date": "15/10/2020"
+	},
+	{
+		"user_id": 9,
+		"company_name": "Facebook",
+		"drive_date": "22/10/2020"
+	},
+	{
+		"user_id": 15,
+		"company_name": "TCS",
+		"drive_date": "06/11/2020"
+	},
+	{
+		"user_id": 7,
+		"company_name": "TCS",
+		"drive_date": "24/10/2020"
+	},
+	{
+		"user_id": 19,
+		"company_name": "TCS",
+		"drive_date": "23/10/2020"
+	},
+	{
+		"user_id": 1,
+		"company_name": "Microsoft",
+		"drive_date": "22/10/2020"
+	},
+	{
+		"user_id": 49,
+		"company_name": "Unity",
+		"drive_date": "20/10/2020"
+	},
+	{
+		"user_id": 45,
+		"company_name": "Unity",
+		"drive_date": "09/10/2020"
+	},
+	{
+		"user_id": 24,
+		"company_name": "Netflix",
+		"drive_date": "18/10/2020"
+	},
+	{
+		"user_id": 47,
+		"company_name": "Leetcode",
+		"drive_date": "25/10/2020"
+	},
+	{
+		"user_id": 6,
+		"company_name": "Chubb",
+		"drive_date": "17/10/2020"
+	},
+	{
+		"user_id": 31,
+		"company_name": "Microsoft",
+		"drive_date": "08/10/2020"
+	},
+	{
+		"user_id": 49,
+		"company_name": "Leetcode",
+		"drive_date": "02/11/2020"
+	},
+	{
+		"user_id": 15,
+		"company_name": "Infosys",
+		"drive_date": "07/11/2020"
+	},
+	{
+		"user_id": 36,
+		"company_name": "Infosys",
+		"drive_date": "08/11/2020"
+	},
+	{
+		"user_id": 4,
+		"company_name": "Apple",
+		"drive_date": "03/11/2020"
+	},
+	{
+		"user_id": 10,
+		"company_name": "Amazon",
+		"drive_date": "26/10/2020"
+	}
+]);
+
+db.mentors.insertMany([
+	{
+		"user_id": 1,
+		"mentor_name": "Divya"
+	},
+	{
+		"user_id": 2,
+		"mentor_name": "Vishal"
+	},
+	{
+		"user_id": 3,
+		"mentor_name": "Divya"
+	},
+	{
+		"user_id": 4,
+		"mentor_name": "Mahesh"
+	},
+	{
+		"user_id": 5,
+		"mentor_name": "Mahesh"
+	},
+	{
+		"user_id": 6,
+		"mentor_name": "Divya"
+	},
+	{
+		"user_id": 7,
+		"mentor_name": "Divya"
+	},
+	{
+		"user_id": 8,
+		"mentor_name": "Saurabh"
+	},
+	{
+		"user_id": 9,
+		"mentor_name": "Mahesh"
+	},
+	{
+		"user_id": 10,
+		"mentor_name": "Mahesh"
+	},
+	{
+		"user_id": 11,
+		"mentor_name": "Saurabh"
+	},
+	{
+		"user_id": 12,
+		"mentor_name": "Divya"
+	},
+	{
+		"user_id": 13,
+		"mentor_name": "Saurabh"
+	},
+	{
+		"user_id": 14,
+		"mentor_name": "Mahesh"
+	},
+	{
+		"user_id": 15,
+		"mentor_name": "Mahesh"
+	},
+	{
+		"user_id": 16,
+		"mentor_name": "Saurabh"
+	},
+	{
+		"user_id": 17,
+		"mentor_name": "Divya"
+	},
+	{
+		"user_id": 18,
+		"mentor_name": "Divya"
+	},
+	{
+		"user_id": 19,
+		"mentor_name": "Mahesh"
+	},
+	{
+		"user_id": 20,
+		"mentor_name": "Mahesh"
+	},
+	{
+		"user_id": 21,
+		"mentor_name": "Saurabh"
+	},
+	{
+		"user_id": 22,
+		"mentor_name": "Divya"
+	},
+	{
+		"user_id": 23,
+		"mentor_name": "Mahesh"
+	},
+	{
+		"user_id": 24,
+		"mentor_name": "Saurabh"
+	},
+	{
+		"user_id": 25,
+		"mentor_name": "Vishal"
+	},
+	{
+		"user_id": 26,
+		"mentor_name": "Vishal"
+	},
+	{
+		"user_id": 27,
+		"mentor_name": "Divya"
+	},
+	{
+		"user_id": 28,
+		"mentor_name": "Divya"
+	},
+	{
+		"user_id": 29,
+		"mentor_name": "Mahesh"
+	},
+	{
+		"user_id": 30,
+		"mentor_name": "Vishal"
+	},
+	{
+		"user_id": 31,
+		"mentor_name": "Divya"
+	},
+	{
+		"user_id": 32,
+		"mentor_name": "Saurabh"
+	},
+	{
+		"user_id": 33,
+		"mentor_name": "Mahesh"
+	},
+	{
+		"user_id": 34,
+		"mentor_name": "Saurabh"
+	},
+	{
+		"user_id": 35,
+		"mentor_name": "Mahesh"
+	},
+	{
+		"user_id": 36,
+		"mentor_name": "Mahesh"
+	},
+	{
+		"user_id": 37,
+		"mentor_name": "Mahesh"
+	},
+	{
+		"user_id": 38,
+		"mentor_name": "Saurabh"
+	},
+	{
+		"user_id": 39,
+		"mentor_name": "Divya"
+	},
+	{
+		"user_id": 40,
+		"mentor_name": "Divya"
+	},
+	{
+		"user_id": 41,
+		"mentor_name": "Vishal"
+	},
+	{
+		"user_id": 42,
+		"mentor_name": "Vishal"
+	},
+	{
+		"user_id": 43,
+		"mentor_name": "Divya"
+	},
+	{
+		"user_id": 44,
+		"mentor_name": "Divya"
+	},
+	{
+		"user_id": 45,
+		"mentor_name": "Mahesh"
+	},
+	{
+		"user_id": 46,
+		"mentor_name": "Divya"
+	},
+	{
+		"user_id": 47,
+		"mentor_name": "Saurabh"
+	},
+	{
+		"user_id": 48,
+		"mentor_name": "Mahesh"
+	},
+	{
+		"user_id": 49,
+		"mentor_name": "Mahesh"
+	},
+	{
+		"user_id": 50,
+		"mentor_name": "Mahesh"
+	}]);
