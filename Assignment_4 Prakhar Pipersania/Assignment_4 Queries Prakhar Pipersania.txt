@@ -8,8 +8,8 @@ db.tasks.find({
       "$eq":[
          {
             "$month":{
-				$toDate: '$task_date'
-			}
+               $toDate: '$task_date'
+            }
          },
          10
       ]
@@ -28,6 +28,8 @@ db.topics.find({
       ]
    }
 });
+
+Output: https://github.com/PrakharPipersania/Guvi-Assignments/tree/main/Assignment_4%20Prakhar%20Pipersania/Output_Answer1.png
 
 Q 2) Find all the company drives which appeared between 15-Oct-2020 and 31-Oct-2020.
 Ans 2)
@@ -55,6 +57,8 @@ db.company_drives.find({
    }
 });
 
+Output: https://github.com/PrakharPipersania/Guvi-Assignments/tree/main/Assignment_4%20Prakhar%20Pipersania/Output_Answer2.png
+
 Q 3) Find all the company drives and students who are appeared for the placement.
 Ans 3)
 
@@ -76,6 +80,8 @@ db.company_drives.aggregate([
       }
    }
 ]);
+
+Output: https://github.com/PrakharPipersania/Guvi-Assignments/tree/main/Assignment_4%20Prakhar%20Pipersania/Output_Answer3.png
 
 Q 4) Find the number of problems solved by the user in codekata.
 Ans 4)
@@ -99,6 +105,8 @@ db.codekata.aggregate([
    }
 ]);
 
+Output: https://github.com/PrakharPipersania/Guvi-Assignments/tree/main/Assignment_4%20Prakhar%20Pipersania/Output_Answer4.png
+
 Q 5) Find all the mentors with who has the mentee's count more than 15.
 Ans 5)
 
@@ -119,6 +127,8 @@ db.mentors.aggregate([
       }
    }
 ]);
+
+Output: https://github.com/PrakharPipersania/Guvi-Assignments/tree/main/Assignment_4%20Prakhar%20Pipersania/Output_Answer5.png
 
 Q 6) Find the number of users who are absent and task is not submitted  between 15-Oct-2020 and 31-Oct-2020.
 Ans 6)
@@ -197,7 +207,7 @@ db.tasks.aggregate([
    }
 ]);
 
-
+Output: https://github.com/PrakharPipersania/Guvi-Assignments/tree/main/Assignment_4%20Prakhar%20Pipersania/Output_Answer6.png
 
 
 
