@@ -1,0 +1,55 @@
+body {
+	overflow-x: hidden;
+	font-family: "Trebuchet MS", Helvetica, sans-serif;
+}
+
+.nav-sty {
+	background-color: #FFF0E9;
+	color: black;
+}
+
+.custom-toggler.navbar-toggler {
+	border-color: #F99C80;
+}
+
+.custom-toggler .navbar-toggler-icon {
+	background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(249,156,128, 1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 8h24M4 16h24M4 24h24'/%3E%3C/svg%3E");
+}
+
+.font-clr1 {
+	color: black;
+}
+
+.font-clr1:hover {
+	color: #F99C80;
+}
+
+.font-clr2 {
+	color: #aaa;
+	font-size: 70%;
+}
+
+.font-clr3 {
+	color: #666;
+	font-size: 80%;
+}
+
+.font-clr4 {
+	color: #666;
+}
+
+.bg-main {
+	background-color: #FFF0E9;
+}
+
+.btn-ftr {
+	background-color: #FFF0E9;
+	color: #F99C80;
+	border-radius: 2vw;
+}
+
+.btn-clr {
+	background-color: #F99C80;
+	color: white;
+	border-radius: 0.8vw;
+}
