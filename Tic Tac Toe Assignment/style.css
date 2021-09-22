@@ -63,3 +63,8 @@ body {
 	align-items: center;
 	border: 6px solid #215677;
 }
+
+.cell:hover {
+	cursor: pointer;
+	background-color: #333;
+}
