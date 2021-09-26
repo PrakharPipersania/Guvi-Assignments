@@ -1,0 +1,28 @@
+html,
+body {
+	background-color: #20243D;
+	color: white;
+}
+
+.card-bg {
+	background-color: #394166;
+	border-radius: 0.5vw;
+	padding: 1vw 2vw;
+	margin: 2.5vw 0;
+}
+
+.card-bg:hover {
+	box-shadow: 5px 6px 6px 2px #446;
+	transform: scale(1.02);
+}
+
+.btn-bg {
+	background-color: #20ABA9;
+	margin: 1vw 0;
+	color: white;
+}
+
+.img-bg {
+	width: auto;
+	height: 180px;
+}
