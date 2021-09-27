@@ -5,7 +5,9 @@ function createCard(cardDetails) {
 	var flagURL = cardDetails.flags[0];
 	var region = cardDetails.region;
 	var cCode = cardDetails.cca2;
-	var cCapital = cardDetails.capital[0];
+	var cCapital = "";
+	if(cardDetails.capital!=undefined)
+		cCapital=cardDetails.capital[0];
 
 	var card = document.createElement('div');
 	card.setAttribute('class', 'card card-bg');
