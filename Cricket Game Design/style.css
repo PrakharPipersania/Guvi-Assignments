@@ -1,0 +1,29 @@
+body {
+	background-color: #242D34;
+	color: white;
+	font-family: "Trebuchet MS", Helvetica, sans-serif;
+}
+
+hr {
+	margin: 6px 0;
+}
+
+.btn-primary {
+	border: 0;
+}
+
+.btn-primary:disabled {
+	background-color: #5aaaff;
+}
+
+table.table-bordered {
+	border-color: #215677;
+}
+
+.table>thead>tr>td,
+.table>thead>tr>th,
+.table>tbody>tr>td,
+.table>tbody>tr>th {
+	padding: 0px;
+	color: white;
+}
